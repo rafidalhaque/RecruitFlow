@@ -262,6 +262,7 @@ async def create_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "What's your full name?"
         )
     context.user_data['profile'] = {}  # Initialize user_data for the profile
+    context.user_data['profile']['resume_file_id'] = None  # Initialize resume_file_id
     logger.info(f"User {user_id} started profile creation/update.")
     return PROFILE_NAME
 
