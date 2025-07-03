@@ -128,24 +128,27 @@ class JobsBot:
         cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
         exists = cursor.fetchone()
 
+        # get resume file id
+        resume_file_id = profile_data.get('resume_file_id')
+
         if exists:
             # Update existing profile
             cursor.execute('''
                 UPDATE users SET username=?, full_name=?, email=?, phone=?,
-                experience=?, skills=?, resume_text=?, updated_at=CURRENT_TIMESTAMP
+                experience=?, skills=?, resume_text=?, resume_file_id=?, updated_at=CURRENT_TIMESTAMP
                 WHERE user_id=?
             ''', (username, profile_data['name'], profile_data['email'],
                   profile_data['phone'], profile_data['experience'],
-                  profile_data['skills'], profile_data['resume'], user_id))
+                  profile_data['skills'], profile_data['resume'], resume_file_id, user_id))
             logger.info(f"Updated profile for user_id: {user_id}")
         else:
             # Insert new profile
             cursor.execute('''
                 INSERT INTO users (user_id, username, full_name, email, phone,
-                experience, skills, resume_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                experience, skills, resume_text, resume_file_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (user_id, username, profile_data['name'], profile_data['email'],
                   profile_data['phone'], profile_data['experience'],
-                  profile_data['skills'], profile_data['resume']))
+                  profile_data['skills'], profile_data['resume'], resume_file_id))
             logger.info(f"Created new profile for user_id: {user_id}")
 
         conn.commit()
