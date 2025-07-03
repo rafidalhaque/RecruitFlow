@@ -561,6 +561,10 @@ def main():
         print("Error: BOT_TOKEN environment variable not set. Please set it in your .env file.")
         return
 
+    if not TELEGRAM_ADMIN_GROUP_ID:
+        logger.warning("TELEGRAM_ADMIN_GROUP_ID environment variable not set. Resume forwarding will not work.")
+        print("Warning: TELEGRAM_ADMIN_GROUP_ID not set. Resume forwarding will be disabled.")
+
     # Create the Application and pass your bot's token.
     application = Application.builder().token(BOT_TOKEN).build()
 
