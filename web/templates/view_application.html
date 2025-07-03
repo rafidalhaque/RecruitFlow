@@ -37,9 +37,18 @@
                 <hr>
 
                 <h6>Resume/Bio</h6>
-                <div class="bg-light p-3 rounded">
-                    {{ app.resume_text|nl2br }}
+                <div class="bg-light p-3 rounded mb-3">
+                    {% if app.resume_text %}{{ app.resume_text|nl2br }}{% else %}No text resume provided.{% endif %}
                 </div>
+
+                {% if app.resume_file_id %}
+                <a class="btn btn-outline-info btn-sm"
+                   href="{{ url_for('download_resume', file_id=app.resume_file_id) }}">
+                    <i class="fas fa-download me-1"></i> Download Resume File
+                </a>
+                {% else %}
+                <p class="text-muted"><small>No resume file uploaded.</small></p>
+                {% endif %}
             </div>
         </div>
 
