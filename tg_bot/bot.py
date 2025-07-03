@@ -307,22 +307,52 @@ async def profile_skills(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return PROFILE_RESUME
 
 
+# Line 253 (start of profile_resume function)
 async def profile_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Collects the user's resume/bio and saves the complete profile."""
-    context.user_data['profile']['resume'] = update.message.text
+    """
+    Handles the user's resume input. Accepts either text or a document.
+    If a document is uploaded, stores its file_id and forwards it to the admin group.
+    """
+    if update.message.document:
+        # User uploaded a file
+        file_id = update.message.document.file_id
+        file_name = update.message.document.file_name
+        context.user_data['profile']['resume_file_id'] = file_id
+        context.user_data['profile']['resume'] = f"Uploaded file: {file_name}"  # Store a placeholder text
 
-    user_id = update.effective_user.id
-    username = update.effective_user.username or "N/A"  # Use "N/A" if username is not set
+        # Forward the document to the admin group/channel
+        if TELEGRAM_ADMIN_GROUP_ID:
+            try:
+                await context.bot.send_document(
+                    chat_id=TELEGRAM_ADMIN_GROUP_ID,
+                    document=file_id,
+                    caption=f"New Resume Uploaded!\n\n"
+                            f"From User: {update.effective_user.full_name} (@{update.effective_user.username or 'N/A'})\n"
+                            f"User ID: {update.effective_user.id}\n"
+                            f"File Name: {file_name}\n"
+                            f"File ID: `{file_id}`"  # Display file_id for admin reference
+                )
+                await update.message.reply_text("📄 Resume file received and forwarded to admin. Thank you!")
+                logger.info(
+                    f"User {update.effective_user.id} uploaded resume file {file_name} (ID: {file_id}). Forwarded to admin group.")
+            except Exception as e:
+                logger.error(f"Failed to forward resume file {file_id} to admin group: {e}")
+                await update.message.reply_text(
+                    "⚠️ There was an error forwarding your resume file to the admin. Please try again or contact support.")
+                # Don't end conversation, allow retry or text input
+                return PROFILE_RESUME
+        else:
+            await update.message.reply_text("📄 Resume file received. Admin group for forwarding is not configured.")
+            logger.warning("TELEGRAM_ADMIN_GROUP_ID is not configured. Resume file not forwarded.")
 
-    jobs_bot.save_user_profile(user_id, username, context.user_data['profile'])
+    elif update.message.text:
+        # User provided text for resume/bio
+        context.user_data['profile']['resume'] = update.message.text
+        context.user_data['profile']['resume_file_id'] = None  # Ensure no old file_id is kept
 
-    await update.message.reply_text(
-        "✅ Profile saved successfully!\n\n"
-        "You can now apply for jobs with one click. Use '💼 View Jobs' to browse available positions."
-    )
-    logger.info(f"User {user_id} completed profile creation/update.")
-    return ConversationHandler.END
-
+    else:
+        await update.message.reply_text("Please send your resume as text or upload a document (PDF, DOCX, etc.):")
+        return PROFILE_RESUME  # Stay in the same state if neither text nor document received
 
 async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Displays a list of available job positions using inline keyboard buttons."""
