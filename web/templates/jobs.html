@@ -18,7 +18,34 @@
           <i class="fas fa-plus me-2"></i>Add New Job
       </a>
   </div>
-
+      <div class="card mb-4">
+          <div class="card-header">
+              <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Jobs</h6>
+          </div>
+          <div class="card-body">
+              <form class="row g-3 align-items-center" method="GET">
+                  <div class="col-md-4">
+                      <label class="form-label visually-hidden" for="statusFilter">Status</label>
+                      <select class="form-select" id="statusFilter" name="status">
+                          <option if status_filter== value="all" {%
+                          'all' %}selected{% endif %}>All Status</option>
+                          <option if status_filter== value="active" {%
+                          'active' %}selected{% endif %}>Active</option>
+                          <option if status_filter== value="inactive" {%
+                          'inactive' %}selected{% endif %}>Inactive</option>
+                      </select>
+                  </div>
+                  <div class="col-md-6">
+                      <label class="form-label visually-hidden" for="jobSearch">Search</label>
+                      <input class="form-control" id="jobSearch" name="search" placeholder="Search by title, description, or location"
+                             type="text" value="{{ search_query }}">
+                  </div>
+                  <div class="col-md-2">
+                      <button class="btn btn-outline-primary w-100" type="submit">Apply Filters</button>
+                  </div>
+              </form>
+          </div>
+      </div>
   <div class="card">
       <div class="card-body">
           {% if jobs %}
