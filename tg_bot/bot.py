@@ -7,6 +7,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 import json
 import os
 from dotenv import load_dotenv  # Import find_dotenv
+import re # For email validation
+import uuid # For generating unique application IDs
 
 # Construct the path to the .env file relative to the current script (bot.py)
 # bot.py is in tg_bot/, .env is in env/ at project root
