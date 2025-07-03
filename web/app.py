@@ -489,7 +489,6 @@ def download_resume(file_id):
 
     return redirect(request.referrer or url_for('dashboard'))
 
-
 # Line 452 (new function)
 @app.template_filter('nl2br')
 def nl2br_filter(s):

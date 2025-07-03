@@ -169,8 +169,51 @@
         </div>
     </div>
 
+    <!-- Telegram Message Modal -->
+    <div aria-hidden="true" aria-labelledby="sendMessageModalLabel" class="modal fade" id="sendMessageModal"
+         tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sendMessageModalLabel">Send Telegram Message</h5>
+                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <form action="{{ url_for('send_telegram_message') }}" method="POST">
+                    <div class="modal-body">
+                        <input id="modalUserId" name="user_id" type="hidden">
+                        <p>Sending message to Telegram User ID: <strong id="displayUserId"></strong></p>
+                        <div class="mb-3">
+                            <label class="form-label" for="messageText">Message</label>
+                            <textarea class="form-control" id="messageText" name="message_text" placeholder="Type your message here. Markdown is supported." required
+                                      rows="5"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                        <button class="btn btn-primary" type="submit">Send Message</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript to populate the modal with user ID
+        document.addEventListener('DOMContentLoaded', function() {
+            var sendMessageModal = document.getElementById('sendMessageModal');
+            sendMessageModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget; // Button that triggered the modal
+                var userId = button.getAttribute('data-bs-user-id');
+                var modalUserIdInput = sendMessageModal.querySelector('#modalUserId');
+                var displayUserIdSpan = sendMessageModal.querySelector('#displayUserId');
+                modalUserIdInput.value = userId;
+                displayUserIdSpan.textContent = userId;
+            });
+        });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
