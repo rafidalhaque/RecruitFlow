@@ -148,20 +148,40 @@ def dashboard():
                            recent_applications=recent_applications,
                            popular_jobs=popular_jobs)
 
+
+# Line 130 (start of jobs function)
 @app.route('/jobs')
 @login_required
 def jobs():
-    """Displays a list of all job postings with their application counts."""
+    """Displays a list of all job postings with their application counts and filtering options."""
     conn = get_db_connection()
-    jobs = conn.execute('''
+
+    # Filtering parameters
+    status_filter = request.args.get('status', 'all')
+    search_query = request.args.get('search', '').strip()
+
+    query = '''
         SELECT j.*, COUNT(a.id) as application_count
         FROM jobs j
         LEFT JOIN applications a ON j.id = a.job_id
-        GROUP BY j.id
-        ORDER BY j.created_at DESC
-    ''').fetchall()
+        WHERE 1=1
+    '''
+    params = []
+
+    if status_filter != 'all':
+        query += ' AND j.is_active = ?'
+        params.append(1 if status_filter == 'active' else 0)
+
+    if search_query:
+        query += ' AND (j.title LIKE ? OR j.description LIKE ? OR j.location LIKE ?)'
+        params.extend([f'%{search_query}%', f'%{search_query}%', f'%{search_query}%'])
+
+    query += ' GROUP BY j.id ORDER BY j.created_at DESC'
+
+    jobs_list = conn.execute(query, params).fetchall()
     conn.close()
-    return render_template('jobs.html', jobs=jobs)
+
+    return render_template('jobs.html', jobs=jobs_list, status_filter=status_filter, search_query=search_query)
 
 @app.route('/jobs/add', methods=['GET', 'POST'])
 @login_required
