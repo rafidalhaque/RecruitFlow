@@ -17,6 +17,8 @@ dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'en
 # Load environment variables from the specified .env file
 load_dotenv(dotenv_path, override=True, verbose=True) # Added override=True and verbose=True for debugging
 
+TELEGRAM_ADMIN_GROUP_ID = os.getenv('TELEGRAM_ADMIN_GROUP_ID') # For forwarding resumes to tg group
+
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
