@@ -109,6 +109,10 @@
                 <a href="tel:{{ user.phone }}" class="btn btn-outline-info w-100">
                     <i class="fas fa-phone me-2"></i>Call Phone
                 </a>
+                <button class="btn btn-outline-primary w-100 mb-2" data-bs-target="#sendMessageModal" data-bs-toggle="modal"
+                        data-bs-user-id="{{ user.user_id }}" type="button">
+                    <i class="fab fa-telegram-plane me-2"></i>Send Telegram Message
+                </button>
             </div>
         </div>
     </div>
