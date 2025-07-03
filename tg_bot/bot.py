@@ -173,19 +173,21 @@ class JobsBot:
         if cursor.fetchone():
             conn.close()
             logger.warning(f"User {user_id} already applied for job {job_id}.")
-            return False, "You have already applied for this position!"
+            return False, "You have already applied for this position!", None
+
+        # Generate a unique public application ID
+        public_app_id = str(uuid.uuid4()).split('-')[0].upper() # Use first part of UUID for brevity
 
         # Insert new application
-        cursor.execute("INSERT INTO applications (user_id, job_id) VALUES (?, ?)", (user_id, job_id))
+        cursor.execute("INSERT INTO applications (public_application_id, user_id, job_id) VALUES (?, ?, ?)",
+                       (public_app_id, user_id, job_id))
         conn.commit()
         conn.close()
         logger.info(f"User {user_id} successfully applied for job {job_id}.")
         return True, "Application submitted successfully!"
 
-
 # Initialize the JobsBot instance globally
 jobs_bot = JobsBot()
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command, showing the main menu."""
