@@ -55,6 +55,7 @@ class JobsBot:
                 experience TEXT,
                 skills TEXT,
                 resume_text TEXT,
+                resume_file_id TEXT, -- New column for Telegram file_id
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
