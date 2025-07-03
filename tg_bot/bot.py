@@ -79,6 +79,7 @@ class JobsBot:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                public_application_id TEXT UNIQUE, -- New column for user-friendly ID
                 user_id INTEGER,
                 job_id INTEGER,
                 status TEXT DEFAULT 'pending', -- e.g., 'pending', 'accepted', 'rejected', 'interviewed'
