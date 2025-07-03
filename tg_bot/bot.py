@@ -424,8 +424,8 @@ async def show_job_details(query, job_id):
     job_text = f"""
 💼 **{title}**
 
-📍 **Location:** {location if location else 'N/A'}
-💰 **Salary:** {salary if salary else 'N/A'}
+📍 **Location:** {location if location else 'রিমোট'}
+💰 **Salary:** {salary if salary else 'রব্বুল আ\'লামীনের সন্তুষ্টি'}
 
 📋 **Description:**
 {description if description else 'No description provided.'}
