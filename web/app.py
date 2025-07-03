@@ -338,20 +338,34 @@ def update_application_status(app_id):
     flash(f'Application status updated to {new_status.title()}!', 'success')
     return redirect(url_for('view_application', app_id=app_id))
 
+
+# (start of users function)
 @app.route('/users')
 @login_required
 def users():
-    """Displays a list of all registered users with their application counts."""
+    """Displays a list of all registered users with their application counts and filtering options."""
     conn = get_db_connection()
-    users_list = conn.execute('''
+    search_query = request.args.get('search', '').strip()  # New search query
+
+    query = '''
         SELECT u.*, COUNT(a.id) as application_count
         FROM users u
         LEFT JOIN applications a ON u.user_id = a.user_id
-        GROUP BY u.user_id
-        ORDER BY u.created_at DESC
-    ''').fetchall()
+        WHERE 1=1
+    '''
+    params = []
+
+    # New: Search by user full name, username, or email
+    if search_query:
+        query += ' AND (u.full_name LIKE ? OR u.username LIKE ? OR u.email LIKE ?)'
+        params.extend([f'%{search_query}%', f'%{search_query}%', f'%{search_query}%'])
+
+    query += ' GROUP BY u.user_id ORDER BY u.created_at DESC'
+
+    users_list = conn.execute(query, params).fetchall()
     conn.close()
-    return render_template('users.html', users=users_list)
+
+    return render_template('users.html', users=users_list, search_query=search_query)  # Pass search_query
 
 @app.route('/users/view/<int:user_id>')
 @login_required
