@@ -256,13 +256,18 @@ def delete_job(job_id):
     conn.close()
     return redirect(url_for('jobs'))
 
+
+# Line 209 (start of applications function)
 @app.route('/applications')
 @login_required
 def applications():
     """Displays a list of all job applications with filtering options."""
     status_filter = request.args.get('status', 'all')
     job_filter = request.args.get('job', 'all')
+    search_query = request.args.get('search', '').strip()  # New search query
+
     conn = get_db_connection()
+
     query = '''
         SELECT a.*, u.full_name, u.email, u.phone, u.username, j.title as job_title, j.location
         FROM applications a
@@ -271,21 +276,33 @@ def applications():
         WHERE 1=1
     '''
     params = []
+
     if status_filter != 'all':
         query += ' AND a.status = ?'
         params.append(status_filter)
+
     if job_filter != 'all':
         query += ' AND a.job_id = ?'
         params.append(int(job_filter))
+
+    # New: Search by applicant name, email, or Telegram username
+    if search_query:
+        query += ' AND (u.full_name LIKE ? OR u.email LIKE ? OR u.username LIKE ?)'
+        params.extend([f'%{search_query}%', f'%{search_query}%', f'%{search_query}%'])
+
     query += ' ORDER BY a.applied_at DESC'
+
     applications_list = conn.execute(query, params).fetchall()
+
     jobs_list = conn.execute('SELECT id, title FROM jobs ORDER BY title').fetchall()
     conn.close()
+
     return render_template('applications.html',
                            applications=applications_list,
                            jobs=jobs_list,
                            status_filter=status_filter,
-                           job_filter=job_filter)
+                           job_filter=job_filter,
+                           search_query=search_query)  # Pass search_query to template
 
 @app.route('/applications/view/<int:app_id>')
 @login_required
