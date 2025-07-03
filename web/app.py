@@ -436,6 +436,59 @@ def send_telegram_message():
 
     return redirect(request.referrer or url_for('dashboard'))  # Redirect back to the page they came from
 
+
+# Line 400 (new function)
+@app.route('/download_resume/<file_id>')
+@login_required
+def download_resume(file_id):
+    """Downloads a resume file from Telegram using its file_id."""
+    if not BOT_TOKEN:
+        flash('Telegram BOT_TOKEN is not configured in .env!', 'error')
+        return redirect(request.referrer or url_for('dashboard'))
+
+    # Get file path from Telegram
+    get_file_url = f"https://api.telegram.org/bot{BOT_TOKEN}/getFile?file_id={file_id}"
+    try:
+        response = requests.get(get_file_url)
+        response.raise_for_status()
+        file_info = response.json().get('result')
+
+        if not file_info:
+            flash('Could not get file information from Telegram.', 'error')
+            return redirect(request.referrer or url_for('dashboard'))
+
+        file_path = file_info.get('file_path')
+        if not file_path:
+            flash('File path not found in Telegram response.', 'error')
+            return redirect(request.referrer or url_for('dashboard'))
+
+        download_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
+
+        # Download the file content
+        file_content_response = requests.get(download_url, stream=True)
+        file_content_response.raise_for_status()
+
+        # Determine filename (Telegram often provides it in file_path or original upload)
+        # We can try to extract it from file_path or use a generic name
+        filename = os.path.basename(file_path)
+        if not filename:
+            filename = f"resume_{file_id}.bin"  # Fallback generic name
+
+        # Use io.BytesIO to create an in-memory file for send_file
+        return send_file(
+            io.BytesIO(file_content_response.content),
+            mimetype=file_info.get('mime_type', 'application/octet-stream'),
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except requests.exceptions.RequestException as e:
+        flash(f'Failed to download resume from Telegram: {e}', 'error')
+    except Exception as e:
+        flash(f'An unexpected error occurred during resume download: {e}', 'error')
+
+    return redirect(request.referrer or url_for('dashboard'))
+
 @app.template_filter('datetime')
 def datetime_filter(value):
     """Formats a datetime string for display (e.g., 'July 03, 2025 at 12:00 PM')."""
