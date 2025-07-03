@@ -19,14 +19,15 @@
     <div class="col-md-6">
         <form method="GET" class="d-flex gap-2 justify-content-end">
             <select name="status" class="form-select form-select-sm w-auto">
-                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
-                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-                <option value="interviewed" {% if status_filter == 'interviewed' %}selected{% endif %}>Interviewed</option>
+                <option value="all"> {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="pending"> {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="accepted"> {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                <option value="rejected">{% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="interviewed"> {% if status_filter == 'interviewed' %}selected{% endif %}>Interviewed
+                </option>
             </select>
             <select name="job" class="form-select form-select-sm w-auto">
-                <option value="all" {% if job_filter == 'all' %}selected{% endif %}>All Jobs</option>
+                <option value="all"> {% if job_filter == 'all' %}selected{% endif %}>All Jobs</option>
                 {% for job in jobs %}
                 <option value="{{ job.id }}" {% if job_filter == job.id|string %}selected{% endif %}>{{ job.title }}</option>
                 {% endfor %}
