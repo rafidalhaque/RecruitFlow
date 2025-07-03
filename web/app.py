@@ -401,6 +401,41 @@ def api_stats():
     conn.close()
     return jsonify(stats)
 
+
+# Line 367 (new function)
+@app.route('/send_telegram_message', methods=['POST'])
+@login_required
+def send_telegram_message():
+    """Sends a message to a specific Telegram user via the bot."""
+    user_id = request.form.get('user_id')
+    message_text = request.form.get('message_text')
+
+    if not user_id or not message_text:
+        flash('User ID and message text are required.', 'error')
+        return redirect(request.referrer or url_for('dashboard'))
+
+    if not BOT_TOKEN:
+        flash('Telegram BOT_TOKEN is not configured in .env!', 'error')
+        return redirect(request.referrer or url_for('dashboard'))
+
+    telegram_api_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': user_id,
+        'text': message_text,
+        'parse_mode': 'Markdown'  # Allow markdown in messages
+    }
+
+    try:
+        response = requests.post(telegram_api_url, json=payload)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        flash(f'Message sent to Telegram user {user_id} successfully!', 'success')
+    except requests.exceptions.RequestException as e:
+        flash(f'Failed to send message to Telegram user {user_id}: {e}', 'error')
+    except Exception as e:
+        flash(f'An unexpected error occurred: {e}', 'error')
+
+    return redirect(request.referrer or url_for('dashboard'))  # Redirect back to the page they came from
+
 @app.template_filter('datetime')
 def datetime_filter(value):
     """Formats a datetime string for display (e.g., 'July 03, 2025 at 12:00 PM')."""
