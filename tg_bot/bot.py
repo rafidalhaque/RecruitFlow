@@ -237,6 +237,12 @@ async def create_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = jobs_bot.get_user_profile(user_id)
 
     if profile:
+        # Show existing data including resume_file_id if present
+        resume_info = "Not provided"
+        if profile[7]:  # resume_text
+            resume_info = profile[7][:50] + "..." if len(profile[7]) > 50 else profile[7]
+        if profile[8]:  # resume_file_id
+            resume_info += f"\n(File ID: {profile[8][:10]}...)"
         # If profile exists, inform the user and show current data
         await update.message.reply_text(
             f"📝 Updating your existing profile:\n\n"
