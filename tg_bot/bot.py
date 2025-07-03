@@ -276,7 +276,12 @@ async def profile_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def profile_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Collects the user's email address for their profile."""
-    context.user_data['profile']['email'] = update.message.text
+    email = update.message.text
+    # Basic email regex validation
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        await update.message.reply_text("❌ That doesn't look like a valid email address. Please try again:")
+        return PROFILE_EMAIL  # Stay in the same state
+    context.user_data['profile']['email'] = email
     await update.message.reply_text("📱 What's your phone number?")
     return PROFILE_PHONE
 
