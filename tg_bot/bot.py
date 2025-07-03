@@ -521,9 +521,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • `/start` - Start the bot and see main menu
 
 **Main Features:**
-📝 **Create/Update Profile** - Set up your professional information (name, email, phone, experience, skills, resume)
+📝 **Create/Update Profile** - Set up your professional information (name, email, phone, experience, skills, resume). You can upload your resume as a file!
 💼 **View Jobs** - Browse available job positions and apply with one click
-📋 **My Applications** - Check the status of your submitted job applications
+📋 **My Applications** - Check the status of your submitted job applications, including your unique Application ID.
 ℹ️ **Help** - Show this help message
 
 **How to Apply for Jobs:**
@@ -533,7 +533,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 4. If you have a profile, an '✅ Apply Now' button will appear. Click it to apply!
 
 **Need Support?**
-Contact the admin if you have any issues or questions.
+Contact @cstcontactbot if you have any issues or questions.
     """
     await update.message.reply_text(help_text, parse_mode='Markdown')
     logger.info(f"User {update.effective_user.id} requested help.")
