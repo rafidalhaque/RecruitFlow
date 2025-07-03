@@ -48,7 +48,8 @@
 
                     <div class="mb-4">
                         <div class="form-check form-switch"> {# Using Bootstrap 5 switch for better UX #}
-                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if job.is_active %}checked{% endif %}>
+                            <input class="form-check-input" id="is_active" name="is_active" type="checkbox"> {% if
+                            job.is_active %}checked{% endif %}>
                             <label class="form-check-label" for="is_active">
                                 Job is active (visible to users)
                             </label>

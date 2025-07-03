@@ -31,7 +31,7 @@
                           'all' %}selected{% endif %}>All Status</option>
                           <option if status_filter== value="active" {%
                           'active' %}selected{% endif %}>Active</option>
-                          <option if status_filter== value="inactive" {%
+                          <option %} if status_filter== value="inactive" {%> {%
                           'inactive' %}selected{% endif %}>Inactive</option>
                       </select>
                   </div>
