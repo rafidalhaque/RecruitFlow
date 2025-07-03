@@ -184,7 +184,7 @@ class JobsBot:
         conn.commit()
         conn.close()
         logger.info(f"User {user_id} successfully applied for job {job_id}.")
-        return True, "Application submitted successfully!"
+        return True, "Application submitted successfully!", public_app_id
 
 # Initialize the JobsBot instance globally
 jobs_bot = JobsBot()
