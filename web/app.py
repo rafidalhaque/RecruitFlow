@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 import sqlite3
 from datetime import datetime
 import hashlib
 import os
 from functools import wraps
 from dotenv import load_dotenv # find_dotenv is no longer strictly needed if we construct the path
+import requests  # For sending Telegram messages and downloading files
+import io  # For handling file downloads
 
 # Construct the path to the .env file relative to the current script (app.py)
 # app.py is in web/, .env is in env/ at project root
