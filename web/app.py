@@ -16,9 +16,11 @@ dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'en
 # raise_error_if_not_found=True is used here to ensure the file exists
 load_dotenv(dotenv_path, override=True, verbose=True) # Added override=True and verbose=True for debugging
 
+BOT_TOKEN = os.getenv('BOT_TOKEN')  # Get bot token for sending messages/downloading files
+
 app = Flask(__name__)
 # Set a strong secret key for production. This is crucial for session security.
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-fallback-secret-key-change-this-in-production')
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'FALLBACK_SECRET_KEY')
 
 # Admin credentials for initial setup.
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
