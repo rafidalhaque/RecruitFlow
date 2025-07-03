@@ -29,8 +29,7 @@
             <select name="job" class="form-select form-select-sm w-auto">
                 <option value="all"> {% if job_filter == 'all' %}selected{% endif %}>All Jobs</option>
                 {% for job in jobs %}
-                <option value="{{ job.id }}"> {% if job_filter == job.id|string %}selected{% endif %}>{{ job.title }}
-                </option>
+                <option value="{{ job.id }}" {% if job_filter == job.id|string %}selected{% endif %}>{{ job.title }}</option>
                 {% endfor %}
             </select>
             <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
