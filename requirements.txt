@@ -1,0 +1,7 @@
+# requirements.txt
+# This file lists the Python packages required to run the Telegram bot and Flask web portal.
+# Version pinning has been loosened to allow for more flexibility.
+
+python-telegram-bot
+Flask
+python-dotenv
