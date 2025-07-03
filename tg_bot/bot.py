@@ -577,7 +577,8 @@ def main():
             PROFILE_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_phone)],
             PROFILE_EXPERIENCE: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_experience)],
             PROFILE_SKILLS: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_skills)],
-            PROFILE_RESUME: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_resume)],
+            PROFILE_RESUME: [MessageHandler(filters.TEXT | filters.Document, profile_resume)],
+            # Accepts text OR document
         },
         fallbacks=[CommandHandler('cancel', cancel)],  # Allow users to cancel the conversation
     )
