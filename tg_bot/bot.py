@@ -483,7 +483,7 @@ async def my_applications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = sqlite3.connect(jobs_bot.db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT j.title, j.location, a.status, a.applied_at
+        SELECT j.title, j.location, a.status, a.applied_at, a.public_application_id
         FROM applications a
         JOIN jobs j ON a.job_id = j.id
         WHERE a.user_id = ?
@@ -500,12 +500,13 @@ async def my_applications(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = "📋 **Your Job Applications:**\n\n"
     for app in applications:
-        title, location, status, applied_at = app
+        title, location, status, applied_at, public_app_id = app
         # Determine emoji based on application status
         status_emoji = "⏳" if status == "pending" else "✅" if status == "accepted" else "❌" if status == "rejected" else "🤝" if status == "interviewed" else "❓"
         text += f"{status_emoji} **{title}** - {location}\n"
         text += f"   Status: {status.title()}\n"
         text += f"   Applied: {applied_at[:10]}\n\n"  # Format date to INSEE-MM-DD
+        text += f"   Application ID: `{public_app_id}`\n"  # Display public_app_id
 
     await update.message.reply_text(text, parse_mode='Markdown')
     logger.info(f"User {user_id} viewed their applications.")
