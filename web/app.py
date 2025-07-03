@@ -489,6 +489,13 @@ def download_resume(file_id):
 
     return redirect(request.referrer or url_for('dashboard'))
 
+
+# Line 452 (new function)
+@app.template_filter('nl2br')
+def nl2br_filter(s):
+    """Converts newline characters in a string to HTML <br> tags."""
+    return s.replace('\n', '<br>') if s else ''
+
 @app.template_filter('datetime')
 def datetime_filter(value):
     """Formats a datetime string for display (e.g., 'July 03, 2025 at 12:00 PM')."""
