@@ -1,0 +1,176 @@
+<!-- web_portal/templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Jobs Bot Admin{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white;
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.8rem 1rem;
+            margin: 0.2rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateX(5px);
+        }
+        .main-content {
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }
+        .navbar {
+            background: white !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-bottom-left-radius: 15px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            border-radius: 10px; /* Rounded corners for cards */
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .stat-card .card-body {
+            padding: 2rem;
+            border-radius: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px; /* Rounded buttons */
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 4px 10px rgba(118, 75, 162, 0.4);
+        }
+        .btn-secondary {
+            border-radius: 8px;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            border-top: none;
+        }
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px; /* Rounded badges */
+        }
+        /* Status badges */
+        .status-pending { background-color: #ffc107; color: #333; }
+        .status-accepted { background-color: #28a745; color: white; }
+        .status-rejected { background-color: #dc3545; color: white; }
+        .status-interviewed { background-color: #17a2b8; color: white; }
+        .form-control, .form-select {
+            border-radius: 8px;
+        }
+        .input-group-text {
+            border-radius: 8px 0 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar p-3">
+                    <div class="text-center mb-4">
+                        <h4><i class="fas fa-briefcase"></i> Jobs Bot</h4>
+                        <small>Admin Panel</small>
+                    </div>
+
+                    <nav class="nav flex-column">
+                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                        <a class="nav-link {% if request.endpoint in ['jobs', 'add_job', 'edit_job', 'delete_job'] %}active{% endif %}" href="{{ url_for('jobs') }}">
+                            <i class="fas fa-briefcase me-2"></i> Manage Jobs
+                        </a>
+                        <a class="nav-link {% if request.endpoint in ['applications', 'view_application', 'update_application_status'] %}active{% endif %}" href="{{ url_for('applications') }}">
+                            <i class="fas fa-file-alt me-2"></i> Applications
+                        </a>
+                        <a class="nav-link {% if request.endpoint in ['users', 'view_user'] %}active{% endif %}" href="{{ url_for('users') }}">
+                            <i class="fas fa-users me-2"></i> Users
+                        </a>
+                        <hr class="my-3">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-expand-lg navbar-light bg-light px-4">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">{% block page_title %}Admin Panel{% endblock %}</h5>
+                            <div class="navbar-nav ms-auto">
+                                <span class="navbar-text">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    Welcome, {{ session.username }}
+                                </span>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Flash Messages -->
+                    <div class="container-fluid p-4">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'info' if category == 'info' else 'success' }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Page Content -->
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

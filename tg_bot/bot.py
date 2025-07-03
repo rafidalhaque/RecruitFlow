@@ -5,6 +5,15 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKe
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, \
     ContextTypes, filters
 import json
+import os
+from dotenv import load_dotenv  # Import find_dotenv
+
+# Construct the path to the .env file relative to the current script (bot.py)
+# bot.py is in tg_bot/, .env is in env/ at project root
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'env', '.env')
+
+# Load environment variables from the specified .env file
+load_dotenv(dotenv_path, override=True, verbose=True) # Added override=True and verbose=True for debugging
 
 # Enable logging
 logging.basicConfig(
@@ -12,20 +21,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Bot token - Replace with your actual bot token
-BOT_TOKEN = "7790842099:AAEk2q9BGDzQXyrDQpIBD7781PQnRq5s52g"
+# Bot token - Get from environment variables
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
-# Conversation states
+# Conversation states for profile creation
 PROFILE_NAME, PROFILE_EMAIL, PROFILE_PHONE, PROFILE_EXPERIENCE, PROFILE_SKILLS, PROFILE_RESUME = range(6)
 
 
 class JobsBot:
     def __init__(self):
+        # Determine the path to the database file, now located in the 'db' directory
+        # It's two levels up from tg_bot/bot.py, then into the 'db' folder
+        self.db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'db', 'jobs_bot.db')
         self.init_database()
 
     def init_database(self):
-        """Initialize SQLite database"""
-        conn = sqlite3.connect('jobs_bot.db')
+        """Initialize SQLite database and create tables if they don't exist."""
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         # Create users table for profiles
@@ -64,14 +76,14 @@ class JobsBot:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 job_id INTEGER,
-                status TEXT DEFAULT 'pending',
+                status TEXT DEFAULT 'pending', -- e.g., 'pending', 'accepted', 'rejected', 'interviewed'
                 applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (user_id),
                 FOREIGN KEY (job_id) REFERENCES jobs (id)
             )
         ''')
 
-        # Insert sample jobs if table is empty
+        # Insert sample jobs if the jobs table is empty
         cursor.execute("SELECT COUNT(*) FROM jobs")
         if cursor.fetchone()[0] == 0:
             sample_jobs = [
@@ -88,13 +100,14 @@ class JobsBot:
                 "INSERT INTO jobs (title, description, requirements, location, salary) VALUES (?, ?, ?, ?, ?)",
                 sample_jobs
             )
+            logger.info("Inserted sample jobs into the database.")
 
         conn.commit()
         conn.close()
 
     def get_user_profile(self, user_id):
-        """Get user profile from database"""
-        conn = sqlite3.connect('jobs_bot.db')
+        """Retrieve a user's profile from the database by user_id."""
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         profile = cursor.fetchone()
@@ -102,35 +115,39 @@ class JobsBot:
         return profile
 
     def save_user_profile(self, user_id, username, profile_data):
-        """Save or update user profile"""
-        conn = sqlite3.connect('jobs_bot.db')
+        """Save or update a user's profile in the database."""
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
         exists = cursor.fetchone()
 
         if exists:
+            # Update existing profile
             cursor.execute('''
-                UPDATE users SET username=?, full_name=?, email=?, phone=?, 
+                UPDATE users SET username=?, full_name=?, email=?, phone=?,
                 experience=?, skills=?, resume_text=?, updated_at=CURRENT_TIMESTAMP
                 WHERE user_id=?
             ''', (username, profile_data['name'], profile_data['email'],
                   profile_data['phone'], profile_data['experience'],
                   profile_data['skills'], profile_data['resume'], user_id))
+            logger.info(f"Updated profile for user_id: {user_id}")
         else:
+            # Insert new profile
             cursor.execute('''
-                INSERT INTO users (user_id, username, full_name, email, phone, 
+                INSERT INTO users (user_id, username, full_name, email, phone,
                 experience, skills, resume_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (user_id, username, profile_data['name'], profile_data['email'],
                   profile_data['phone'], profile_data['experience'],
                   profile_data['skills'], profile_data['resume']))
+            logger.info(f"Created new profile for user_id: {user_id}")
 
         conn.commit()
         conn.close()
 
     def get_active_jobs(self):
-        """Get all active jobs"""
-        conn = sqlite3.connect('jobs_bot.db')
+        """Retrieve all active job postings from the database."""
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM jobs WHERE is_active = 1 ORDER BY created_at DESC")
         jobs = cursor.fetchall()
@@ -138,28 +155,31 @@ class JobsBot:
         return jobs
 
     def apply_for_job(self, user_id, job_id):
-        """Submit job application"""
-        conn = sqlite3.connect('jobs_bot.db')
+        """Submit a job application for a user."""
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Check if already applied
+        # Check if the user has already applied for this job
         cursor.execute("SELECT id FROM applications WHERE user_id = ? AND job_id = ?", (user_id, job_id))
         if cursor.fetchone():
             conn.close()
+            logger.warning(f"User {user_id} already applied for job {job_id}.")
             return False, "You have already applied for this position!"
 
+        # Insert new application
         cursor.execute("INSERT INTO applications (user_id, job_id) VALUES (?, ?)", (user_id, job_id))
         conn.commit()
         conn.close()
+        logger.info(f"User {user_id} successfully applied for job {job_id}.")
         return True, "Application submitted successfully!"
 
 
-# Initialize bot instance
+# Initialize the JobsBot instance globally
 jobs_bot = JobsBot()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Start command handler"""
+    """Handles the /start command, showing the main menu."""
     keyboard = [
         [KeyboardButton("📝 Create/Update Profile")],
         [KeyboardButton("💼 View Jobs"), KeyboardButton("📋 My Applications")],
@@ -172,19 +192,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 I can help you find and apply for jobs. Here's what you can do:
 
-📝 Create/Update Profile - Set up your professional profile
-💼 View Jobs - Browse available job positions
-📋 My Applications - Check your application status
-ℹ️ Help - Get assistance
+📝 *Create/Update Profile* - Set up your professional profile
+💼 *View Jobs* - Browse available job positions
+📋 *My Applications* - Check your application status
+ℹ️ *Help* - Get assistance
 
 Start by creating your profile to apply for jobs with one click!
     """
-
-    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode='Markdown')
+    logger.info(f"User {update.effective_user.id} started the bot.")
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle button clicks"""
+    """Handles clicks on the main menu reply keyboard buttons."""
     text = update.message.text
 
     if text == "📝 Create/Update Profile":
@@ -195,72 +215,81 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await my_applications(update, context)
     elif text == "ℹ️ Help":
         await help_command(update, context)
+    else:
+        await update.message.reply_text("I didn't understand that. Please use the menu buttons.")
+    logger.info(f"User {update.effective_user.id} clicked button: {text}")
 
 
 async def create_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Start profile creation conversation"""
+    """Starts the conversation for creating or updating a user profile."""
     user_id = update.effective_user.id
     profile = jobs_bot.get_user_profile(user_id)
 
     if profile:
+        # If profile exists, inform the user and show current data
         await update.message.reply_text(
             f"📝 Updating your existing profile:\n\n"
             f"Name: {profile[2]}\n"
             f"Email: {profile[3]}\n"
-            f"Phone: {profile[4]}\n\n"
+            f"Phone: {profile[4]}\n"
+            f"Experience: {profile[5]}\n"
+            f"Skills: {profile[6]}\n"
+            f"Resume: {profile[7][:50]}...\n\n"  # Show first 50 chars of resume
             f"Let's update your information. What's your full name?"
         )
     else:
+        # If no profile, start a new creation process
         await update.message.reply_text(
             "📝 Let's create your professional profile!\n\n"
             "This information will be used for job applications.\n\n"
             "What's your full name?"
         )
-
+    context.user_data['profile'] = {}  # Initialize user_data for the profile
+    logger.info(f"User {user_id} started profile creation/update.")
     return PROFILE_NAME
 
 
 async def profile_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle name input"""
-    context.user_data['profile'] = {'name': update.message.text}
+    """Collects the user's full name for their profile."""
+    context.user_data['profile']['name'] = update.message.text
     await update.message.reply_text("📧 What's your email address?")
     return PROFILE_EMAIL
 
 
 async def profile_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle email input"""
+    """Collects the user's email address for their profile."""
     context.user_data['profile']['email'] = update.message.text
     await update.message.reply_text("📱 What's your phone number?")
     return PROFILE_PHONE
 
 
 async def profile_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle phone input"""
+    """Collects the user's phone number for their profile."""
     context.user_data['profile']['phone'] = update.message.text
-    await update.message.reply_text("💼 Tell me about your work experience (years and type):")
+    await update.message.reply_text("💼 Tell me about your work experience (e.g., '5 years as a Software Engineer'):")
     return PROFILE_EXPERIENCE
 
 
 async def profile_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle experience input"""
+    """Collects the user's work experience for their profile."""
     context.user_data['profile']['experience'] = update.message.text
-    await update.message.reply_text("🔧 What are your key skills? (separate with commas)")
+    await update.message.reply_text("🔧 What are your key skills? (e.g., 'Python, SQL, Project Management')")
     return PROFILE_SKILLS
 
 
 async def profile_skills(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle skills input"""
+    """Collects the user's skills for their profile."""
     context.user_data['profile']['skills'] = update.message.text
-    await update.message.reply_text("📄 Please provide a brief resume/bio about yourself:")
+    await update.message.reply_text("📄 Please provide a brief resume/bio about yourself (max 500 characters):")
     return PROFILE_RESUME
 
 
 async def profile_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle resume input and save profile"""
+    """Collects the user's resume/bio and saves the complete profile."""
     context.user_data['profile']['resume'] = update.message.text
 
     user_id = update.effective_user.id
-    username = update.effective_user.username or "N/A"
+    username = update.effective_user.username or "N/A"  # Use "N/A" if username is not set
 
     jobs_bot.save_user_profile(user_id, username, context.user_data['profile'])
 
@@ -268,12 +297,12 @@ async def profile_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✅ Profile saved successfully!\n\n"
         "You can now apply for jobs with one click. Use '💼 View Jobs' to browse available positions."
     )
-
+    logger.info(f"User {user_id} completed profile creation/update.")
     return ConversationHandler.END
 
 
 async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show available jobs with inline keyboard"""
+    """Displays a list of available job positions using inline keyboard buttons."""
     jobs = jobs_bot.get_active_jobs()
 
     if not jobs:
@@ -282,10 +311,10 @@ async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = []
     for job in jobs:
-        job_id, title, description, requirements, location, salary = job[:6]
+        job_id, title, description, requirements, location, salary, is_active, created_at = job
         keyboard.append([InlineKeyboardButton(
             f"💼 {title} - {location}",
-            callback_data=f"job_{job_id}"
+            callback_data=f"job_{job_id}"  # Callback data includes job ID
         )])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -293,26 +322,40 @@ async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💼 Available Job Positions:\n\nClick on any job to view details and apply:",
         reply_markup=reply_markup
     )
+    logger.info(f"User {update.effective_user.id} viewed available jobs.")
 
 
 async def job_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle job selection callbacks"""
+    """Handles callbacks from inline keyboard buttons (job selection and application)."""
     query = update.callback_query
-    await query.answer()
+    await query.answer()  # Acknowledge the callback query
 
     callback_data = query.data
 
     if callback_data.startswith("job_"):
         job_id = int(callback_data.split("_")[1])
         await show_job_details(query, job_id)
+        logger.info(f"User {query.from_user.id} viewed details for job {job_id}.")
     elif callback_data.startswith("apply_"):
         job_id = int(callback_data.split("_")[1])
         await apply_job(query, job_id)
+        logger.info(f"User {query.from_user.id} attempted to apply for job {job_id}.")
+    elif callback_data == "back_jobs":
+        # Re-show the list of jobs
+        await view_jobs(query, context)  # Pass query as update to reuse view_jobs logic
+        logger.info(f"User {query.from_user.id} navigated back to job list.")
+    elif callback_data == "create_profile":
+        # Redirect to profile creation, using the message context
+        # For simplicity, we'll send a new message prompting them to use the main menu button
+        await query.edit_message_text(
+            "Please use the '📝 Create/Update Profile' button from the main menu to create your profile."
+        )
+        logger.info(f"User {query.from_user.id} was prompted to create profile via main menu.")
 
 
 async def show_job_details(query, job_id):
-    """Show detailed job information"""
-    conn = sqlite3.connect('jobs_bot.db')
+    """Displays detailed information about a selected job."""
+    conn = sqlite3.connect(jobs_bot.db_path)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
     job = cursor.fetchone()
@@ -320,24 +363,25 @@ async def show_job_details(query, job_id):
 
     if not job:
         await query.edit_message_text("❌ Job not found!")
+        logger.warning(f"Job {job_id} not found for details view.")
         return
 
-    job_id, title, description, requirements, location, salary = job[:6]
+    job_id, title, description, requirements, location, salary, is_active, created_at = job
 
     job_text = f"""
 💼 **{title}**
 
-📍 **Location:** {location}
-💰 **Salary:** {salary}
+📍 **Location:** {location if location else 'N/A'}
+💰 **Salary:** {salary if salary else 'N/A'}
 
 📋 **Description:**
-{description}
+{description if description else 'No description provided.'}
 
 🔧 **Requirements:**
-{requirements}
+{requirements if requirements else 'No specific requirements listed.'}
     """
 
-    # Check if user has profile
+    # Check if user has a profile to determine if 'Apply Now' button should be shown
     user_id = query.from_user.id
     profile = jobs_bot.get_user_profile(user_id)
 
@@ -355,19 +399,20 @@ async def show_job_details(query, job_id):
 
 
 async def apply_job(query, job_id):
-    """Apply for a job"""
+    """Handles the job application process."""
     user_id = query.from_user.id
 
-    # Check if user has profile
+    # Ensure user has a profile before allowing application
     profile = jobs_bot.get_user_profile(user_id)
     if not profile:
         await query.edit_message_text(
             "❌ Please create your profile first before applying!\n\n"
             "Use '📝 Create/Update Profile' from the main menu."
         )
+        logger.warning(f"User {user_id} tried to apply for job {job_id} without a profile.")
         return
 
-    # Apply for job
+    # Attempt to apply for the job
     success, message = jobs_bot.apply_for_job(user_id, job_id)
 
     if success:
@@ -375,19 +420,20 @@ async def apply_job(query, job_id):
             f"🎉 {message}\n\nYour application has been submitted and will be reviewed by our team.")
     else:
         await query.edit_message_text(f"⚠️ {message}")
+    logger.info(f"Application attempt for job {job_id} by user {user_id}: Success={success}, Message='{message}'")
 
 
 async def my_applications(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show user's job applications"""
+    """Displays a list of the user's submitted job applications."""
     user_id = update.effective_user.id
 
-    conn = sqlite3.connect('jobs_bot.db')
+    conn = sqlite3.connect(jobs_bot.db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT j.title, j.location, a.status, a.applied_at 
-        FROM applications a 
-        JOIN jobs j ON a.job_id = j.id 
-        WHERE a.user_id = ? 
+        SELECT j.title, j.location, a.status, a.applied_at
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        WHERE a.user_id = ?
         ORDER BY a.applied_at DESC
     ''', (user_id,))
     applications = cursor.fetchall()
@@ -396,21 +442,24 @@ async def my_applications(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not applications:
         await update.message.reply_text(
             "📋 You haven't applied for any jobs yet.\n\nUse '💼 View Jobs' to browse and apply!")
+        logger.info(f"User {user_id} has no applications.")
         return
 
     text = "📋 **Your Job Applications:**\n\n"
     for app in applications:
         title, location, status, applied_at = app
-        status_emoji = "⏳" if status == "pending" else "✅" if status == "accepted" else "❌"
+        # Determine emoji based on application status
+        status_emoji = "⏳" if status == "pending" else "✅" if status == "accepted" else "❌" if status == "rejected" else "🤝" if status == "interviewed" else "❓"
         text += f"{status_emoji} **{title}** - {location}\n"
         text += f"   Status: {status.title()}\n"
-        text += f"   Applied: {applied_at[:10]}\n\n"
+        text += f"   Applied: {applied_at[:10]}\n\n"  # Format date to INSEE-MM-DD
 
     await update.message.reply_text(text, parse_mode='Markdown')
+    logger.info(f"User {user_id} viewed their applications.")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show help information"""
+    """Provides help information about the bot's features."""
     help_text = """
 🤖 **Jobs Bot Help**
 
@@ -418,43 +467,50 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • `/start` - Start the bot and see main menu
 
 **Main Features:**
-📝 **Create/Update Profile** - Set up your professional information
-💼 **View Jobs** - Browse available job positions and apply
-📋 **My Applications** - Check status of your applications
+📝 **Create/Update Profile** - Set up your professional information (name, email, phone, experience, skills, resume)
+💼 **View Jobs** - Browse available job positions and apply with one click
+📋 **My Applications** - Check the status of your submitted job applications
 ℹ️ **Help** - Show this help message
 
 **How to Apply for Jobs:**
-1. First, create your profile with your professional information
-2. Browse available jobs using 'View Jobs'
-3. Click on any job to see details
-4. Apply with one click using your saved profile
+1. First, create or update your profile using the '📝 Create/Update Profile' button.
+2. Browse available jobs using the '💼 View Jobs' button.
+3. Click on any job in the list to see its details.
+4. If you have a profile, an '✅ Apply Now' button will appear. Click it to apply!
 
 **Need Support?**
 Contact the admin if you have any issues or questions.
     """
-
     await update.message.reply_text(help_text, parse_mode='Markdown')
+    logger.info(f"User {update.effective_user.id} requested help.")
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Cancel conversation"""
+    """Cancels the current conversation (e.g., profile creation)."""
     await update.message.reply_text(
-        "❌ Operation cancelled. Use the menu buttons to continue.",
+        "❌ Operation cancelled. You can use the main menu buttons to continue.",
         reply_markup=ReplyKeyboardMarkup([
             [KeyboardButton("📝 Create/Update Profile")],
             [KeyboardButton("💼 View Jobs"), KeyboardButton("📋 My Applications")],
             [KeyboardButton("ℹ️ Help")]
         ], resize_keyboard=True)
     )
+    logger.info(f"User {update.effective_user.id} cancelled a conversation.")
     return ConversationHandler.END
 
 
 def main():
-    """Start the bot"""
-    # Create application
+    """Starts the Telegram bot application."""
+    # Ensure BOT_TOKEN is loaded
+    if not BOT_TOKEN:
+        logger.error("BOT_TOKEN environment variable not set. Please set it in your .env file.")
+        print("Error: BOT_TOKEN environment variable not set. Please set it in your .env file.")
+        return
+
+    # Create the Application and pass your bot's token.
     application = Application.builder().token(BOT_TOKEN).build()
 
-    # Profile creation conversation handler
+    # Define the ConversationHandler for profile creation
     profile_conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^📝 Create/Update Profile$"), create_profile)],
         states={
@@ -465,19 +521,20 @@ def main():
             PROFILE_SKILLS: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_skills)],
             PROFILE_RESUME: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_resume)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler('cancel', cancel)],  # Allow users to cancel the conversation
     )
 
-    # Add handlers
+    # Register handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(profile_conv_handler)
-    application.add_handler(MessageHandler(filters.TEXT, button_handler))
-    application.add_handler(CallbackQueryHandler(job_callback))
+    application.add_handler(profile_conv_handler)  # Add the conversation handler
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
+                                           button_handler))  # Handles all text messages that are not commands
+    application.add_handler(CallbackQueryHandler(job_callback))  # Handles inline keyboard button presses
 
-    # Start the bot
+    # Start the Bot
     print("🤖 Jobs Bot is starting...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=Update.ALL_TYPES)  # Poll for updates from Telegram
 
 
 if __name__ == '__main__':

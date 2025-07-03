@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View Application</title>
+</head>
+<body>
+    <!-- web_portal/templates/view_application.html -->
+{% extends "base.html" %}
+
+{% block title %}View Application - Jobs Bot Admin{% endblock %}
+{% block page_title %}Application Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Applicant Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Personal Information</h6>
+                        <p><strong>Name:</strong> {{ app.full_name }}</p>
+                        <p><strong>Email:</strong> {{ app.email }}</p>
+                        <p><strong>Phone:</strong> {{ app.phone }}</p>
+                        <p><strong>Telegram:</strong> @{{ app.username }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Professional Details</h6>
+                        <p><strong>Experience:</strong> {{ app.experience }}</p>
+                        <p><strong>Skills:</strong> {{ app.skills }}</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6>Resume/Bio</h6>
+                <div class="bg-light p-3 rounded">
+                    {{ app.resume_text|nl2br }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Job Details</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Job Title:</strong> {{ app.job_title }}</p>
+                <p><strong>Location:</strong> {{ app.job_location }}</p>
+                <p><strong>Salary:</strong> {{ app.job_salary }}</p>
+                <p><strong>Description:</strong> {{ app.job_description }}</p>
+                <p><strong>Requirements:</strong> {{ app.job_requirements }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Application Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Application ID:</strong> {{ app.id }}</p>
+                <p><strong>Applied At:</strong> {{ app.applied_at|datetime }}</p>
+                <p>
+                    <strong>Current Status:</strong>
+                    <span class="badge status-{{ app.status }}">
+                        {{ app.status.title() }}
+                    </span>
+                </p>
+
+                <hr>
+
+                <h6>Update Status</h6>
+                <form action="{{ url_for('update_application_status', app_id=app.id) }}" method="POST">
+                    <div class="mb-3">
+                        <select name="status" class="form-select">
+                            <option value="pending" {% if app.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="accepted" {% if app.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="rejected" {% if app.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="interviewed" {% if app.status == 'interviewed' %}selected{% endif %}>Interviewed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+</body>
+</html>
