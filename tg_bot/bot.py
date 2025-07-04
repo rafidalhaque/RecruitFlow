@@ -351,7 +351,7 @@ async def profile_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['profile']['resume_file_id'] = None  # Ensure no old file_id is kept
 
     else:
-        await update.message.reply_text("Please send your resume as text or upload a document (PDF, DOCX, etc.):")
+        await update.message.reply_text("❌ Only file uploads are accepted for the resume. Please upload your resume file (PDF, DOCX, etc.) or type /cancel to stop.")
         return PROFILE_RESUME  # Stay in the same state if neither text nor document received
 
 async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -577,8 +577,8 @@ def main():
             PROFILE_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_phone)],
             PROFILE_EXPERIENCE: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_experience)],
             PROFILE_SKILLS: [MessageHandler(filters.TEXT & ~filters.COMMAND, profile_skills)],
-            PROFILE_RESUME: [MessageHandler(filters.TEXT & ~filters.COMMAND | filters.ATTACHMENT, profile_resume)],
-            # Accepts text OR document
+            PROFILE_RESUME: [MessageHandler(filters.ATTACHMENT | filters.TEXT, profile_resume)],
+            # Accepts only document
         },
         fallbacks=[CommandHandler('cancel', cancel)],  # Allow users to cancel the conversation
     )
