@@ -505,8 +505,8 @@ async def my_applications(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status_emoji = "⏳" if status == "pending" else "✅" if status == "accepted" else "❌" if status == "rejected" else "🤝" if status == "interviewed" else "❓"
         text += f"{status_emoji} **{title}** - {location}\n"
         text += f"   Status: {status.title()}\n"
-        text += f"   Applied: {applied_at[:10]}\n\n"  # Format date to INSEE-MM-DD
-        text += f"   Application ID: `{public_app_id}`\n"  # Display public_app_id
+        text += f"   Applied: {applied_at[:10]}\n"  # Format date to INSEE-MM-DD
+        text += f"   Application ID: `{public_app_id}`\n\n"  # Display public_app_id
 
     await update.message.reply_text(text, parse_mode='Markdown')
     logger.info(f"User {user_id} viewed their applications.")
