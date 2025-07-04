@@ -487,7 +487,7 @@ async def apply_job(query, job_id):
         return
 
     # Attempt to apply for the job
-    success, message = jobs_bot.apply_for_job(user_id, job_id)
+    success, message, public_app_id = jobs_bot.apply_for_job(user_id, job_id)
 
     if success:
         await query.edit_message_text(
