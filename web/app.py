@@ -515,5 +515,7 @@ def nl2br_filter(s):
     return s.replace('\n', '<br>') if s else ''
 
 if __name__ == '__main__':
-    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't') # default FLASK_DEBUG = False
+    host = os.getenv('HOST', '0.0.0.0') # default HOST = 0.0.0.0 (all hosts)
+    port = os.getenv('PORT', '5000') # default PORT = 5000
+    app.run(debug=debug_mode, host=host, port=port)
