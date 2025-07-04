@@ -354,6 +354,27 @@ async def profile_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Only file uploads are accepted for the resume. Please upload your resume file (PDF, DOCX, etc.) or type /cancel to stop.")
         return PROFILE_RESUME  # Stay in the same state if neither text nor document received
 
+    user_id = update.effective_user.id
+    username = update.effective_user.username or "N/A"
+
+    jobs_bot.save_user_profile(user_id, username, context.user_data['profile'])
+
+    # Re-display the main keyboard after successful profile save
+    keyboard = [
+        [KeyboardButton("📝 Create/Update Profile")],
+        [KeyboardButton("💼 View Jobs"), KeyboardButton("📋 My Applications")],
+        [KeyboardButton("ℹ️ Help")]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+    await update.message.reply_text(
+        "✅ Profile saved successfully!\n\n"
+        "You can now apply for jobs with one click. Use '💼 View Jobs' to browse available positions.",
+        reply_markup=reply_markup  # Explicitly send back the main keyboard
+    )
+    logger.info(f"User {user_id} completed profile creation/update.")
+    return ConversationHandler.END
+
 async def view_jobs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Displays a list of available job positions using inline keyboard buttons."""
     jobs = jobs_bot.get_active_jobs()
